@@ -1,4 +1,4 @@
-import { YoutubeTranscript } from 'youtube-transcript';
+import { YoutubeTranscript } from "youtube-transcript";
 
 interface YouTubeSearchResponse {
   items: {
@@ -27,7 +27,7 @@ interface YouTubeVideoDetailsResponse {
 
 export class YouTubeService {
   private apiKeys: string[];
-  private baseUrl = 'https://www.googleapis.com/youtube/v3';
+  private baseUrl = "https://www.googleapis.com/youtube/v3";
 
   constructor() {
     this.apiKeys = process.env.YOUTUBE_API_KEYS!.split(",");
@@ -37,13 +37,64 @@ export class YouTubeService {
     return this.apiKeys[Math.floor(Math.random() * this.apiKeys.length)];
   }
 
+  async searchBestVideo(query: string): Promise<any | null> {
+    try {
+      const apiKey = this.getRandomApiKey();
+
+      const searchUrl = `${this.baseUrl}/search?part=snippet&type=video&q=${encodeURIComponent(
+        query,
+      )}&maxResults=3&key=${apiKey}&order=relevance`;
+
+      const searchResponse = await fetch(searchUrl);
+      const searchData: YouTubeSearchResponse = await searchResponse.json();
+      if (!searchData.items || searchData.items.length === 0) {
+        return null;
+      }
+
+      const item = searchData.items[0]; // best match by view count
+      const videoIds = item.id.videoId;
+
+      const detailsUrl = ${this.baseUrl}/videos?part=contentDetails&id=${videoIds}&key=${apiKey};
+      const detailsResponse = await fetch(detailsUrl);
+      const detailsData: YouTubeVideoDetailsResponse =
+        await detailsResponse.json();
+
+      return {
+        id: item.id.videoId,
+        title: this.decodeHtmlEntities(item.snippet.title),
+        description: this.decodeHtmlEntities(item.snippet.description),
+        channelTitle: this.decodeHtmlEntities(item.snippet.channelTitle),
+        thumbnailUrl:
+          item.snippet.thumbnails.high?.url ||
+          item.snippet.thumbnails.medium?.url ||
+          item.snippet.thumbnails.default?.url,
+        publishedAt: item.snippet.publishedAt,
+        duration: detailsData.items[0]?.contentDetails.duration || "PT0S",
+      };
+    } catch (error) {
+      console.error("YouTube searchBestVideo Error:", error);
+      return null;
+    }
+  }
+
+  private decodeHtmlEntities(text: string): string {
+    if (!text) return text;
+    return text
+      .replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&#x2F;/g, "/");
+  }
+
   async searchVideos(query: string, maxResults: number = 20): Promise<any[]> {
     try {
       // Pick one random API key for the whole request
       const apiKey = this.getRandomApiKey();
 
       const searchUrl = `${this.baseUrl}/search?part=snippet&type=video&q=${encodeURIComponent(
-        query
+        query,
       )}&maxResults=${maxResults}&key=${apiKey}&order=relevance&videoDuration=medium`;
 
       const searchResponse = await fetch(searchUrl);
@@ -53,74 +104,84 @@ export class YouTubeService {
       }
 
       // Get video IDs for duration fetching
-      const videoIds = searchData.items.map(item => item.id.videoId).join(',');
+      const videoIds = searchData.items
+        .map((item) => item.id.videoId)
+        .join(",");
 
-      const detailsUrl = `${this.baseUrl}/videos?part=contentDetails&id=${videoIds}&key=${apiKey}`;
+      const detailsUrl = ${this.baseUrl}/videos?part=contentDetails&id=${videoIds}&key=${apiKey};
       const detailsResponse = await fetch(detailsUrl);
-      const detailsData: YouTubeVideoDetailsResponse = await detailsResponse.json();
+      const detailsData: YouTubeVideoDetailsResponse =
+        await detailsResponse.json();
 
       // Combine search results with video details
       return searchData.items.map((item, index) => ({
         id: item.id.videoId,
-        title: item.snippet.title,
-        description: item.snippet.description,
-        channelTitle: item.snippet.channelTitle,
+        title: this.decodeHtmlEntities(item.snippet.title),
+        description: this.decodeHtmlEntities(item.snippet.description),
+        channelTitle: this.decodeHtmlEntities(item.snippet.channelTitle),
         thumbnailUrl:
           item.snippet.thumbnails.high?.url ||
           item.snippet.thumbnails.medium?.url ||
           item.snippet.thumbnails.default?.url,
         publishedAt: item.snippet.publishedAt,
-        duration: detailsData.items[index]?.contentDetails.duration || 'PT0S',
+        duration: detailsData.items[index]?.contentDetails.duration || "PT0S",
       }));
     } catch (error) {
-      console.error('YouTube API Error:', error);
+      console.error("YouTube API Error:", error);
       return [];
     }
   }
 
   formatDuration(isoDuration: string): string {
     const match = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-    if (!match) return '0:00';
+    if (!match) return "0:00";
 
-    const hours = parseInt(match[1] || '0');
-    const minutes = parseInt(match[2] || '0');
-    const seconds = parseInt(match[3] || '0');
+    const hours = parseInt(match[1] || "0");
+    const minutes = parseInt(match[2] || "0");
+    const seconds = parseInt(match[3] || "0");
 
     if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      return ${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")};
     }
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    return ${minutes}:${seconds.toString().padStart(2, "0")};
   }
 
   async getTranscript(videoId: string): Promise<string> {
     try {
       const segments = await YoutubeTranscript.fetchTranscript(videoId);
-      return segments.map(s => s.text).join(' ').replace(/\s+/g, ' ').trim();
+      return segments
+        .map((s) => s.text)
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
     } catch {
-      return '';
+      return "";
     }
   }
 
-  async generateSmartQuery(originalQuery: string, language?: string): Promise<string[]> {
+  async generateSmartQuery(
+    originalQuery: string,
+    language?: string,
+  ): Promise<string[]> {
     const baseQueries = [
-      `${originalQuery} tutorial`,
-      `${originalQuery} complete course`,
-      `${originalQuery} beginner guide`,
-      `${originalQuery} fundamentals`,
-      `${originalQuery} step by step`,
+      ${originalQuery} tutorial,
+      ${originalQuery} complete course,
+      ${originalQuery} beginner guide,
+      ${originalQuery} fundamentals,
+      ${originalQuery} step by step,
     ];
 
-    if (language && language !== 'en') {
+    if (language && language !== "en") {
       const languageMap: { [key: string]: string } = {
-        'hi': 'hindi',
-        'es': 'spanish',
-        'fr': 'french',
-        'de': 'german',
-        'pt': 'portuguese',
-        'ar': 'arabic',
+        hi: "hindi",
+        es: "spanish",
+        fr: "french",
+        de: "german",
+        pt: "portuguese",
+        ar: "arabic",
       };
       const langName = languageMap[language] || language;
-      return baseQueries.map(query => `${query} in ${langName}`);
+      return baseQueries.map((query) => ${query} in ${langName});
     }
 
     return baseQueries;
