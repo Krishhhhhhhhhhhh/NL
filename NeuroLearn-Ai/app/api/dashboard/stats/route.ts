@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { Session } from "next-auth"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions) as Session & { user: { id: string } }

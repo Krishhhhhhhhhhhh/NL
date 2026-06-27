@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import type { Session } from 'next-auth';
 
+export const dynamic = 'force-dynamic';
+
 interface RouteParams {
   params: {
     slug: string;
