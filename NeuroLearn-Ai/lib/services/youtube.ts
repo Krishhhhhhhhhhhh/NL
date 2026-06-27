@@ -54,7 +54,7 @@ export class YouTubeService {
       const item = searchData.items[0]; // best match by view count
       const videoIds = item.id.videoId;
 
-      const detailsUrl = ${this.baseUrl}/videos?part=contentDetails&id=${videoIds}&key=${apiKey};
+      const detailsUrl = `${this.baseUrl}/videos?part=contentDetails&id=${videoIds}&key=${apiKey}`;
       const detailsResponse = await fetch(detailsUrl);
       const detailsData: YouTubeVideoDetailsResponse =
         await detailsResponse.json();
@@ -108,7 +108,7 @@ export class YouTubeService {
         .map((item) => item.id.videoId)
         .join(",");
 
-      const detailsUrl = ${this.baseUrl}/videos?part=contentDetails&id=${videoIds}&key=${apiKey};
+      const detailsUrl = `${this.baseUrl}/videos?part=contentDetails&id=${videoIds}&key=${apiKey}`;
       const detailsResponse = await fetch(detailsUrl);
       const detailsData: YouTubeVideoDetailsResponse =
         await detailsResponse.json();
@@ -141,9 +141,9 @@ export class YouTubeService {
     const seconds = parseInt(match[3] || "0");
 
     if (hours > 0) {
-      return ${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")};
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
     }
-    return ${minutes}:${seconds.toString().padStart(2, "0")};
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   }
 
   async getTranscript(videoId: string): Promise<string> {
@@ -164,11 +164,11 @@ export class YouTubeService {
     language?: string,
   ): Promise<string[]> {
     const baseQueries = [
-      ${originalQuery} tutorial,
-      ${originalQuery} complete course,
-      ${originalQuery} beginner guide,
-      ${originalQuery} fundamentals,
-      ${originalQuery} step by step,
+      `${originalQuery} tutorial`,
+      `${originalQuery} complete course`,
+      `${originalQuery} beginner guide`,
+      `${originalQuery} fundamentals`,
+      `${originalQuery} step by step`,
     ];
 
     if (language && language !== "en") {
@@ -181,7 +181,7 @@ export class YouTubeService {
         ar: "arabic",
       };
       const langName = languageMap[language] || language;
-      return baseQueries.map((query) => ${query} in ${langName});
+      return baseQueries.map((query) => `${query} in ${langName}`);
     }
 
     return baseQueries;
