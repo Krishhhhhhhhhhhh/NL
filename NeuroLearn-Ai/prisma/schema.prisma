@@ -1,0 +1,245 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Mock Interview Feature
+model MockInterview {
+  id            Int          @id @default(autoincrement())
+  jsonMockResp  String       @db.Text
+  jobPosition   String       @db.VarChar(255)
+  jobDesc       String       @db.VarChar(255)
+  jobExperience String       @db.VarChar(255)
+  createdBy     String       @db.VarChar(255)
+  createdAt     DateTime     @default(now())
+  mockId        String       @unique @db.VarChar(255)
+  userAnswers   UserAnswer[]
+
+  @@map("mockInterview")
+}
+
+model UserAnswer {
+  id           Int          @id @default(autoincrement())
+  mockIdRef    String       @db.VarChar(255)
+  question     String       @db.VarChar(255)
+  correctAns   String?      @db.Text
+  userAns      String?      @db.Text
+  feedback     String?      @db.Text
+  rating       String?      @db.VarChar(255)
+  userEmail    String?      @db.VarChar(255)
+  createdAt    DateTime     @default(now())
+  mockInterview MockInterview @relation(fields: [mockIdRef], references: [mockId])
+
+  @@map("userAnswer")
+}
+
+// NextAuth.js models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  walletAddress String?   @unique
+  accounts      Account[]
+  sessions      Session[]
+  videos        Video[]
+  histories     History[]
+  badges        Badge[]
+  playlists     Playlist[]
+  notes         Note[]
+roadmaps      UserRoadmapProgress[]
+  nodeProgress  UserNodeProgress[]
+
+  quizResults   QuizResult[]
+  createdAt     DateTime  @default(now())
+}
+
+model Playlist {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  userId      String
+  videos      Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+model Badge {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String?
+  awardedAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  moduleId    String?
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Video {
+  id         String   @id @default(cuid())
+  youtubeId  String   @unique
+  title      String
+  description String?
+  thumbnail  String?
+  duration   String?
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  createdAt  DateTime @default(now())
+  histories  History[]
+}
+
+model History {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  videoId   String
+  watchTime Int?
+  completed Boolean  @default(false)
+  viewedAt  DateTime @default(now())
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  userId    String
+  youtubeId String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, youtubeId])
+}
+
+model QuizResult {
+  id        String   @id @default(cuid())
+  userId    String
+  youtubeId String
+  score     Int
+  total     Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Roadmap Feature Models
+model Roadmap {
+  id               String                  @id @default(cuid())
+  title            String
+  description      String?
+  slug             String                  @unique
+  thumbnail        String?
+  difficulty       String                  @default("intermediate")
+
+  nodes            RoadmapNode[]
+  userProgress     UserRoadmapProgress[]
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  @@index([slug])
+  @@map("roadmap")
+}
+
+
+model RoadmapNode {
+  id               String                  @id @default(cuid())
+  roadmapId        String
+  roadmap          Roadmap                 @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+
+  title            String
+  description      String?
+  resources        Json?
+
+  level            Int                     @default(1)
+  stepNumber       Int?
+  position         Json
+  dependsOn        String[]                @default([])
+
+  userProgress     UserNodeProgress[]
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  @@unique([roadmapId, title])
+  @@index([roadmapId])
+  @@map("roadmapNode")
+}
+
+model UserRoadmapProgress {
+  id               String                  @id @default(cuid())
+  userId           String
+  user             User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  roadmapId        String
+  roadmap          Roadmap                 @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+
+  nodeProgress     UserNodeProgress[]
+  progressPercent  Int                     @default(0)
+  startedAt        DateTime                @default(now())
+  completedAt      DateTime?
+  lastAccessedAt   DateTime                @updatedAt
+
+  @@unique([userId, roadmapId])
+  @@index([userId, roadmapId])
+  @@map("userRoadmapProgress")
+}
+
+model UserNodeProgress {
+  id               String                  @id @default(cuid())
+  userId           String
+  user             User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  nodeId           String
+  node             RoadmapNode             @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  roadmapProgressId String
+  roadmapProgress  UserRoadmapProgress     @relation(fields: [roadmapProgressId], references: [id], onDelete: Cascade)
+
+  state            String                  @default("locked")
+  unlockedAt       DateTime?
+  startedAt        DateTime?
+  completedAt      DateTime?
+
+  @@unique([userId, nodeId])
+  @@index([userId, roadmapProgressId])
+  @@map("userNodeProgress")
+}

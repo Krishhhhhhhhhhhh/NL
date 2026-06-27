@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "NeuroLearn AI - Job to Learning Path",
+  "version": "2.1",
+  "description": "Extracts job descriptions from LinkedIn/job portals and redirects to NeuroLearn with relevant learning videos",
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+
+  "host_permissions": [
+    "https://www.linkedin.com/*",
+    "https://linkedin.com/*",
+    "https://www.indeed.com/*",
+    "https://indeed.com/*",
+    "https://www.naukri.com/*",
+    "https://naukri.com/*",
+    "https://www.glassdoor.com/*",
+    "https://glassdoor.com/*",
+    "https://internshala.com/*",
+    "http://localhost:3000/*"
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["content.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
