@@ -29,7 +29,8 @@
     "https://www.glassdoor.com/*",
     "https://glassdoor.com/*",
     "https://internshala.com/*",
-    "http://localhost:3000/*"
+    "http://localhost:3000/*",
+    "https://neurolearnai-six.vercel.app/*"
   ],
 
   "web_accessible_resources": [

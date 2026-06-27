@@ -3,7 +3,7 @@
  * Categorizes job skills into 3 difficulty levels
  */
 
-const NEUROLEARN_URL = "http://localhost:3000";
+const NEUROLEARN_URL = "https://neurolearnai-six.vercel.app/";
 
 function setStatus(message, type = "default") {
     const statusEl = document.getElementById("status");
